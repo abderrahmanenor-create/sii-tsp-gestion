@@ -1,0 +1,298 @@
+// This is your Prisma schema file for SII TSP Gestion Application
+// Gestion de chantier industriel SII - JESA OCP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum Role {
+  ADMIN
+  CHEF_PROJET
+  RH
+  SUPERVISEUR
+  AGENT
+}
+
+enum StatutZone {
+  EN_COURS
+  SUSPENDU
+  EN_ATTENTE
+  LIVRE
+  FERME
+  LITIGE
+}
+
+enum StatutTache {
+  A_FAIRE
+  EN_COURS
+  EN_ATTENTE
+  TERMINE
+  ANNULE
+}
+
+enum Priorite {
+  BASSE
+  NORMALE
+  HAUTE
+  URGENTE
+}
+
+enum TypeTache {
+  MECANIQUE
+  ELECTRICITE
+  GENERAL
+}
+
+enum TypeMouvement {
+  ENTREE
+  SORTIE
+  TRANSFERT_ENTREE
+  TRANSFERT_SORTIE
+  INVENTAIRE
+}
+
+enum CodePointage {
+  PRESENT
+  ABSENT
+  CONGE
+  MALADIE
+  FORMATION
+  RETARD
+  DEPART_ANTICIPE
+}
+
+// ==================== UTILISATEURS & AUTHENTIFICATION ====================
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  password        String
+  nom             String
+  prenom          String
+  telephone       String?
+  photo           String?
+  role            Role      @default(AGENT)
+  equipeId        String?
+  zoneId          String?
+  actif           Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  equipe          Equipe?   @relation(fields: [equipeId], references: [id])
+  zone            Zone?     @relation(fields: [zoneId], references: [id])
+  pointages       Pointage[]
+  tachesAssignees Tache[]   @relation("TacheAssignee")
+  tachesCreees    Tache[]   @relation("TacheCreeur")
+  notesVocales    NoteVocale[]
+  mouvementsStock MouvementStock[]
+  equipesGerees   Equipe[]  @relation("ChefEquipe")
+
+  @@index([email])
+  @@index([role])
+}
+
+// ==================== ZONES & ÉQUIPES ====================
+
+model Zone {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  nom         String
+  description String?
+  statut      StatutZone  @default(EN_COURS)
+  dateDebut   DateTime?
+  dateFin     DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  users       User[]
+  equipes     Equipe[]
+  taches      Tache[]
+  pointages   Pointage[]
+  articles    ArticleZone[]
+  mouvements  MouvementStock[]
+
+  @@index([code])
+  @@index([statut])
+}
+
+model Equipe {
+  id           String    @id @default(cuid())
+  nom          String
+  description  String?
+  zoneId       String
+  chefEquipeId String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  zone         Zone      @relation(fields: [zoneId], references: [id])
+  chefEquipe   User?     @relation("ChefEquipe", fields: [chefEquipeId], references: [id])
+  membres      User[]
+  taches       Tache[]
+
+  @@index([zoneId])
+}
+
+// ==================== TÂCHES & KANBAN ====================
+
+model Tache {
+  id            String      @id @default(cuid())
+  titre         String
+  description   String?
+  statut        StatutTache @default(A_FAIRE)
+  priorite      Priorite    @default(NORMALE)
+  type          TypeTache   @default(MECANIQUE)
+  dateEcheance  DateTime?
+  zoneId        String?
+  createurId    String
+  assigneeId    String?
+  equipeId      String?
+  noteVocaleId  String?     @unique
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  zone          Zone?       @relation(fields: [zoneId], references: [id])
+  createur      User        @relation("TacheCreeur", fields: [createurId], references: [id])
+  assignee      User?       @relation("TacheAssignee", fields: [assigneeId], references: [id])
+  equipe        Equipe?     @relation(fields: [equipeId], references: [id])
+  noteVocale    NoteVocale? @relation(fields: [noteVocaleId], references: [id])
+
+  @@index([statut])
+  @@index([priorite])
+  @@index([type])
+  @@index([zoneId])
+  @@index([assigneeId])
+}
+
+// ==================== NOTES VOCALES ====================
+
+model NoteVocale {
+  id            String    @id @default(cuid())
+  audioUrl      String
+  transcription String?
+  duree         Int       // en secondes
+  userId        String
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id])
+  tache         Tache?
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// ==================== STOCK ====================
+
+model CategorieArticle {
+  id          String    @id @default(cuid())
+  nom         String
+  description String?
+  createdAt   DateTime  @default(now())
+
+  articles    Article[]
+
+  @@index([nom])
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  nom         String
+  description String?
+  unite       String    // pcs, m, kg, l, etc.
+  seuilAlerte Int       @default(10)
+  categorieId String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  categorie   CategorieArticle @relation(fields: [categorieId], references: [id])
+  mouvements  MouvementStock[]
+  stocksZone  ArticleZone[]
+
+  @@index([code])
+  @@index([categorieId])
+}
+
+model ArticleZone {
+  id          String  @id @default(cuid())
+  articleId   String
+  zoneId      String
+  quantite    Int     @default(0)
+  emplacement String?
+
+  article     Article @relation(fields: [articleId], references: [id])
+  zone        Zone    @relation(fields: [zoneId], references: [id])
+
+  @@unique([articleId, zoneId])
+  @@index([articleId])
+  @@index([zoneId])
+}
+
+model MouvementStock {
+  id           String         @id @default(cuid())
+  articleId    String
+  zoneId       String
+  type         TypeMouvement
+  quantite     Int
+  motif        String?
+  referenceDoc String? // N° bon de sortie, bon de réception, etc.
+  userId       String
+  createdAt    DateTime       @default(now())
+
+  article      Article        @relation(fields: [articleId], references: [id])
+  zone         Zone           @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id])
+
+  @@index([articleId])
+  @@index([zoneId])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// ==================== POINTAGE ====================
+
+model Pointage {
+  id                String        @id @default(cuid())
+  userId            String
+  zoneId            String
+  date              DateTime
+  heureArrivee      DateTime?
+  heureDepart       DateTime?
+  codePointage      CodePointage  @default(PRESENT)
+  heuresTravaillees Float?
+  heuresSup         Float?
+  motif             String?
+  valide            Boolean       @default(false)
+  valideParId       String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id])
+  zone              Zone          @relation(fields: [zoneId], references: [id])
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([zoneId])
+  @@index([date])
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  titre     String
+  message   String
+  lu        Boolean  @default(false)
+  lien      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([lu])
+}

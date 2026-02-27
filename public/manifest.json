@@ -1,0 +1,48 @@
+{
+  "name": "SII TSP Gestion",
+  "short_name": "SII TSP",
+  "description": "Application de gestion de chantier industriel SII - JESA OCP",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002E5D",
+  "theme_color": "#002E5D",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/logo_SII.png",
+      "sizes": "192x192",
+      "type": "image"
+    },
+    {
+      "src": "/logo_SII.png",
+      "sizes": "512x512",
+      "type": "image"
+    }
+  ],
+  "screens": [
+    {
+    "name": "home",
+    "url": "/"
+  },
+    {
+    "name": "dashboard",
+    "url": "/dashboard"
+  },
+  {
+    "name": "taches",
+    "url": "/taches"
+  },
+  {
+    "name": "stock",
+    "url": "/stock"
+  },
+  {
+    "name": "pointage",
+    "url": "/pointage"
+  },
+  {
+    "name": "notes",
+    "url": "/notes"
+  }
+  ]
+}
