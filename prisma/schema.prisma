@@ -1,4 +1,5 @@
 // This is your Prisma schema file for SII TSP Gestion Application
+// PostgreSQL version for Vercel deployment (Neon, Supabase, Railway)
 // Gestion de chantier industriel SII - JESA OCP
 
 generator client {
@@ -6,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -85,8 +86,8 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  equipe          Equipe?   @relation(fields: [equipeId], references: [id])
-  zone            Zone?     @relation(fields: [zoneId], references: [id])
+  equipe          Equipe?   @relation(fields: [equipeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  zone            Zone?     @relation(fields: [zoneId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   pointages       Pointage[]
   tachesAssignees Tache[]   @relation("TacheAssignee")
   tachesCreees    Tache[]   @relation("TacheCreeur")
@@ -131,8 +132,8 @@ model Equipe {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  zone         Zone      @relation(fields: [zoneId], references: [id])
-  chefEquipe   User?     @relation("ChefEquipe", fields: [chefEquipeId], references: [id])
+  zone         Zone      @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  chefEquipe   User?     @relation("ChefEquipe", fields: [chefEquipeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   membres      User[]
   taches       Tache[]
 
@@ -157,10 +158,10 @@ model Tache {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  zone          Zone?       @relation(fields: [zoneId], references: [id])
+  zone          Zone?       @relation(fields: [zoneId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   createur      User        @relation("TacheCreeur", fields: [createurId], references: [id])
-  assignee      User?       @relation("TacheAssignee", fields: [assigneeId], references: [id])
-  equipe        Equipe?     @relation(fields: [equipeId], references: [id])
+  assignee      User?       @relation("TacheAssignee", fields: [assigneeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  equipe        Equipe?     @relation(fields: [equipeId], references: [id], onDelete: SetNull, onUpdate: NoAction)
   noteVocale    NoteVocale? @relation(fields: [noteVocaleId], references: [id])
 
   @@index([statut])
@@ -227,7 +228,7 @@ model ArticleZone {
   emplacement String?
 
   article     Article @relation(fields: [articleId], references: [id])
-  zone        Zone    @relation(fields: [zoneId], references: [id])
+  zone        Zone    @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 
   @@unique([articleId, zoneId])
   @@index([articleId])
@@ -274,7 +275,7 @@ model Pointage {
   updatedAt         DateTime      @updatedAt
 
   user              User          @relation(fields: [userId], references: [id])
-  zone              Zone          @relation(fields: [zoneId], references: [id])
+  zone              Zone          @relation(fields: [zoneId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
   @@index([userId])
