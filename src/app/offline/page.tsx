@@ -1,3 +1,4 @@
+"use client"
 export default function Offline() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#002E5D] to-[#001a36] p-4">
