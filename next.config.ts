@@ -7,6 +7,16 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  // Autoriser les origines de développement pour le preview
+  allowedDevOrigins: [
+    'preview-chat-710f87eb-adb8-41bd-9393-eccc7f37b62c.space.z.ai',
+    'localhost:3000'
+  ],
+  // Configuration des images
+  images: {
+    remotePatterns: [],
+    unoptimized: true,
+  },
   // PWA Configuration
   headers: async () => {
     return [
