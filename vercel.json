@@ -1,16 +1,5 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "bun run build",
-  "devCommand": "bun run dev",
   "installCommand": "bun install",
-  "framework": "nextjs",
-  "regions": ["cdg1"],
-  "env": {
-    "NEXTAUTH_URL": {
-      "description": "URL de base de l'application (ex: https://votre-app.vercel.app)"
-    },
-    "NEXTAUTH_SECRET": {
-      "description": "Secret pour NextAuth.js (générer avec: openssl rand -base64 32)"
-    }
-  }
+  "framework": "nextjs"
 }
